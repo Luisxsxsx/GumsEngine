@@ -3,16 +3,19 @@
 #define WINDOW_HEIGTH 720
 #define NUM_POINTS 100
 
-// #include <iostream>
+#include <iostream>
 #include "math/Vector2d.cpp"
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
+#include <vector>
 
 /* Delcarando de forma statica ambos janela e renderizador */
 static SDL_Window *main_window = nullptr;
 static SDL_Renderer *main_render = nullptr;
 
-static SDL_FPoint points[NUM_POINTS];
+// static SDL_FPoint points[NUM_POINTS];
+static std::vector<GumsEngine::Vector2> points;
+static std::vector<SDL_FPoint> pointsSDL;
 
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) // AppInit é uma funcao de inicializacao onde declaramos e inicializamos tudo que envolve o inicio do programa
 {
@@ -34,10 +37,17 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) // AppInit é
     SDL_SetRenderLogicalPresentation(main_render, WINDOW_WIDTH, WINDOW_HEIGTH, SDL_LOGICAL_PRESENTATION_LETTERBOX);
 
     int i;
-    for (i = 0; i < SDL_arraysize(points); i++)
+    for (i = 0; i < NUM_POINTS; i++)
     {
-        points[i].x = SDL_randf() * ((float)WINDOW_WIDTH);
-        points[i].y = SDL_randf() * ((float)WINDOW_HEIGTH);
+        points.push_back(GumsEngine::Vector2{(SDL_randf() * ((float)WINDOW_WIDTH)),       // x
+                                             SDL_randf() * ((float)WINDOW_HEIGTH)}); // y
+        // std::cout << points.at(i);
+    }
+    pointsSDL.reserve(points.size());
+
+    for (const auto &point : points)
+    {
+        pointsSDL.push_back(point.toSDLFPoint()); /* Convertendo para SDL_FPoint */
     }
 
     return SDL_APP_CONTINUE; /* CONTINUE COM O PROGRAMA! */
@@ -57,7 +67,7 @@ SDL_AppResult SDL_AppIterate(void *appstate)
     SDL_SetRenderDrawColor(main_render, 0, 0, 0, SDL_ALPHA_OPAQUE);
     SDL_RenderClear(main_render);
     SDL_SetRenderDrawColor(main_render, 255, 255, 255, SDL_ALPHA_OPAQUE);
-    SDL_RenderPoints(main_render, points, SDL_arraysize(points));
+    SDL_RenderPoints(main_render, pointsSDL.data(), SDL_arraysize(points));
 
     SDL_RenderPresent(main_render);
 

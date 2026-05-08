@@ -1,4 +1,6 @@
 #include <cmath>
+#include <ostream>
+#include <SDL3/SDL_rect.h>
 
 namespace GumsEngine
 {
@@ -6,12 +8,17 @@ namespace GumsEngine
     struct Vector2
     {
         float x, y;
-
         // construtores //
         Vector2() : x(0), y(0) {}
         Vector2(float x, float y) : x(x), y(y) {}
 
         // Operadores //
+
+        friend std::ostream &operator<<(std::ostream &os, const Vector2 &v){
+            os << "{" << v.x << ", " << v.y << "}";
+            return os;
+        }
+
         // Soma entre vetores//
         Vector2 operator+(const Vector2 &other) const
         {
@@ -74,6 +81,11 @@ namespace GumsEngine
             return *this;
         }
 
+        operator SDL_FPoint() const
+        {
+            return SDL_FPoint{x, y};
+        }
+
         bool operator==(const Vector2 &other) const
         {
             return x == other.x && y == other.y;
@@ -100,6 +112,11 @@ namespace GumsEngine
         static float distance(const Vector2 a, const Vector2 b)
         {
             return (a - b).magnitude();
+        }
+
+        SDL_FPoint toSDLFPoint() const
+        {
+            return SDL_FPoint{x, y};
         }
     };
 

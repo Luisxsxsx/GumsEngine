@@ -1,118 +1,70 @@
-#include <iostream>
+#define SDL_MAIN_USE_CALLBACKS 1 // Usa uma chamada de funcao ao inves da main() original //
+#define WINDOW_WIDTH 1280
+#define WINDOW_HEIGTH 720
+#define NUM_POINTS 100
+
+// #include <iostream>
+#include "math/Vector2d.cpp"
 #include <SDL3/SDL.h>
+#include <SDL3/SDL_main.h>
 
-int checkRGBIncrease(int rgb)
+/* Delcarando de forma statica ambos janela e renderizador */
+static SDL_Window *main_window = nullptr;
+static SDL_Renderer *main_render = nullptr;
+
+static SDL_FPoint points[NUM_POINTS];
+
+SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) // AppInit é uma funcao de inicializacao onde declaramos e inicializamos tudo que envolve o inicio do programa
 {
-    const int max_limit = 255;
-    const int min_limit = 0;
+    SDL_SetAppMetadata("GumsEngine", "0.0.1", "com.gumsengine.main");
 
-    if (rgb >= max_limit)
-        return -1; // decrease
+    if (!SDL_Init(SDL_INIT_VIDEO))
+    {
+        SDL_Log("Couldn't initialize video with SDL: %s", SDL_GetError());
+        return SDL_APP_FAILURE;
+    }
 
-    if (rgb <= min_limit)
-        return 1; // increase
+    if (!SDL_CreateWindowAndRenderer("GumsEngine 0.0.1", WINDOW_WIDTH, WINDOW_HEIGTH, SDL_WINDOW_RESIZABLE, &main_window, &main_render))
+    {
+        SDL_Log("Couldn't create a window or renderer: %s", SDL_GetError());
+        return SDL_APP_FAILURE;
+    }
 
-    return 0; // Does nothing
+    // Setando uma lógica de apresentacao da renderizacao desejada (*render, largura, altura, [logica] -> estrutura enumerada disponivel pelo SDL)
+    SDL_SetRenderLogicalPresentation(main_render, WINDOW_WIDTH, WINDOW_HEIGTH, SDL_LOGICAL_PRESENTATION_LETTERBOX);
+
+    int i;
+    for (i = 0; i < SDL_arraysize(points); i++)
+    {
+        points[i].x = SDL_randf() * ((float)WINDOW_WIDTH);
+        points[i].y = SDL_randf() * ((float)WINDOW_HEIGTH);
+    }
+
+    return SDL_APP_CONTINUE; /* CONTINUE COM O PROGRAMA! */
 }
 
-int main(int argc, char *argv[])
+// controle de eventos //
+SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event)
 {
-    // std::cout << "Hello World" << std::endl;
+    if (event->type == SDL_EVENT_QUIT)
+        return SDL_APP_SUCCESS; /* finaliza o programa */
 
-    if (SDL_Init(SDL_INIT_VIDEO) < 0)
-    {
-        std::cerr << "SDL could not initialize! SDL_Error: " << SDL_GetError()
-                  << std::endl;
+    return SDL_APP_CONTINUE; /* Continue o programa */
+}
 
-        return EXIT_FAILURE;
-    }
+SDL_AppResult SDL_AppIterate(void *appstate)
+{
+    SDL_SetRenderDrawColor(main_render, 0, 0, 0, SDL_ALPHA_OPAQUE);
+    SDL_RenderClear(main_render);
+    SDL_SetRenderDrawColor(main_render, 255, 255, 255, SDL_ALPHA_OPAQUE);
+    SDL_RenderPoints(main_render, points, SDL_arraysize(points));
 
-    SDL_Window *window = SDL_CreateWindow(
-        "GumsEngine ver. 0.0.1",
-        800,
-        600,
-        SDL_WINDOW_RESIZABLE);
+    SDL_RenderPresent(main_render);
 
-    if (window == nullptr)
-    {
-        std::cerr << "Window could not be created! SDL_Error: " << SDL_GetError()
-                  << std::endl;
+    return SDL_APP_CONTINUE;
+}
 
-        SDL_DestroyWindow(window);
-
-        return EXIT_FAILURE;
-    }
-
-    SDL_Renderer *renderer = SDL_CreateRenderer(window, NULL);
-
-    if (!renderer)
-    {
-        std::cerr << "Renderer could not be created! SDL_Error: " << SDL_GetError()
-                  << std::endl;
-
-        SDL_DestroyWindow(window);
-        SDL_Quit();
-        return EXIT_FAILURE;
-    }
-
-    SDL_Event event;
-    bool running = true,
-         increaseR = true,
-         increaseG = true,
-         increaseB = true;
-    int r = 242,
-        g = 72,
-        b = 5;
-    while (running)
-    {
-        if (checkRGBIncrease(r) == -1)
-            increaseR = false;
-        else if (checkRGBIncrease(r) == 1)
-            increaseR = true;
-
-        if (checkRGBIncrease(g) == -1)
-            increaseG = false;
-        else if (checkRGBIncrease(g) == 1)
-            increaseG = true;
-
-        if (checkRGBIncrease(b) == -1)
-            increaseB = false;
-        else if (checkRGBIncrease(b) == 1)
-            increaseB = true;
-
-        if (increaseR)
-            r++;
-        else
-            r--;
-
-        if (increaseG)
-            g++;
-        else
-            g--;
-
-        if (increaseB)
-            b++;
-        else
-            b--;
-
-        while (SDL_PollEvent(&event))
-        {
-            if (event.type == SDL_EVENT_QUIT)
-                running = false;
-        }
-
-        SDL_SetRenderDrawColor(renderer, r, g, b, 255);
-        SDL_RenderClear(renderer);
-        SDL_RenderPresent(renderer);
-
-        SDL_UpdateWindowSurface(window);
-
-        SDL_Delay(16);
-    }
-
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
-    SDL_Quit();
-
-    return EXIT_SUCCESS;
+void SDL_AppQuit(void *appstate, SDL_AppResult result)
+{
+    /*SDL limpa a janela e o render pra gente */
 }
